@@ -23,15 +23,17 @@
   <body>
     <canvas width="600" height="600" id="game"></canvas>
     <script>
-      var canvas = document.getElementById('game');
-      var context = canvas.getContext('2d');
+      let canvas = document.getElementById('game');
+      let context = canvas.getContext('2d');
 
-      var grid = 20;
-      var count = 0;
+      let grid = 20;
+      let count = 0;
         
-      var snake = {
-        x: 160,
-        y: 160,
+      let snake = {
+        x: 0,
+        y: 300,
+        h: grid,
+        w: grid,
         
         dx: grid,
         dy: 0,
@@ -40,35 +42,37 @@
         
         maxCells: 4
       };
-      var apple = {
-        x: 320,
-        y: 320
+      let apple = {
+        x: 580,
+        y: 300
       };
+      let wall = { 
+          h : grid, w : grid, color : '#800080',
+          positions : [
+              [0, 0], [0, 580], [580, 0], [580, 580], [20, 20], [560, 20], [20, 560], [560, 560], [40, 40], [540, 40], [40, 540], [540, 540],
+              [100, 100], [100, 480], [480, 100], [480, 480], [100, 120], [100, 140], [120, 100], [140, 100], [480, 460], [480, 440], [460, 480], [440, 480],
+              [140, 140], [440, 440], [100, 440], [120, 440], [140, 440], [140, 460], [140, 480], [440, 100], [440, 120], [440, 140], [460, 140], [480, 140]
+          ],
+          draw : function(x, y)   {
+              context.fillStyle = this.color;
+              context.fillRect(x, y, this.h-1, this.w-1);
+          }
+      }
+      let scoreboard = {
+        score : 0,
+
+        draw : function()  {
+            context.font = '20px Arial';
+            context.fillStyle = 'white';
+            context.fillText('Score: ' + this.score, 270, grid);
+        }
+      }
 
       function getRandomInt(min, max) {
         return Math.floor(Math.random() * (max - min)) + min;
       }
 
-
-      function loop() {
-          /*for (let i = 0; i < wall.positions.length; i++)    {
-                  wall.draw(wall.positions[i][0], wall.positions[i][1]);
-              }*/
-              requestAnimationFrame(loop);
-
-        if (++count < 3) {
-          return;
-        }
-
-
-        count = 0;
-        context.clearRect(0,0,canvas.width,canvas.height);
-
-
-        snake.x += snake.dx;
-        snake.y += snake.dy;
-
-
+      function isPacmanEffect() {
         if (snake.x < 0) {
           snake.x = canvas.width - grid;
         }
@@ -82,6 +86,32 @@
         else if (snake.y >= canvas.height) {
           snake.y = 0;
         }
+      }
+
+      function restartGame()  {
+        snake.x = 160;
+        snake.y = 160;
+        snake.cells = [];
+        snake.maxCells = 4;
+        snake.dx = grid;
+        snake.dy = 0;
+        apple.x = getRandomInt(0, 30) * grid;
+        apple.y = getRandomInt(0, 30) * grid;
+      }
+
+      function loop() {  
+        requestAnimationFrame(loop);
+
+        if (++count < 3) {
+          return;
+        }
+
+        count = 0;
+        context.clearRect(0,0,canvas.width,canvas.height);
+
+        snake.x += snake.dx;
+        snake.y += snake.dy;
+        isPacmanEffect();
 
         snake.cells.unshift({x: snake.x, y: snake.y});
 
@@ -89,57 +119,46 @@
           snake.cells.pop();
         }
 
+        for (let i = 0; i < wall.positions.length; i++)    {
+                  wall.draw(wall.positions[i][0], wall.positions[i][1]);
+              }
+
+        
+
         context.fillStyle = 'red';
         context.fillRect(apple.x, apple.y, grid-1, grid-1);
 
         context.fillStyle = 'green';
-        snake.cells.forEach(function(cell, index) {
-          
+        snake.cells.forEach(function(cell, index) {      
           context.fillRect(cell.x, cell.y, grid-1, grid-1);  
+        
 
           if (cell.x === apple.x && cell.y === apple.y) {
             snake.maxCells++;
+            scoreboard.score++;
 
             apple.x = getRandomInt(0, 30) * grid;
             apple.y = getRandomInt(0, 30) * grid;
           }
 
-
-          
-          for (var i = index + 1; i < snake.cells.length; i++) {
+          for (let i = index + 1; i < snake.cells.length; i++) {
             
               if (cell.x === snake.cells[i].x && cell.y === snake.cells[i].y) {
-              snake.x = 160;
-              snake.y = 160;
-              snake.cells = [];
-              snake.maxCells = 4;
-              snake.dx = grid;
-              snake.dy = 0;
-
-              apple.x = getRandomInt(0, 30) * grid;
-              apple.y = getRandomInt(0, 30) * grid;
+                restartGame();
             }
           }
+          for (let i = 0; i < wall.positions.length; i++)    {
+            let wallX = wall.positions[i][0];
+            let wallY = wall.positions[i][1];
+            let wallW = wall.w;
+            let wallH = wall.h;
+            if (snake.x == wallX && snake.y == wallY) {
+              restartGame();
+            }
+          }        
         });
+        scoreboard.draw();
       }
-      /*let wall = { 
-          h : grid, w : grid, color : '#800080',
-          positions : [
-              [220, 0], [220, 20], [220, 40], [220, 60], [220, 80], [220, 100], [220, 120],
-              [160, 0], [160, 20], [160, 40], [160, 60], [160, 80], [160, 100], [160, 120],
-              [0, 160], [20, 160], [40, 160], [60, 160], [80, 160], [100, 160], [120, 160],
-              [0, 220], [20, 220], [40, 220], [60, 220], [80, 220], [100, 220], [120, 220],
-              [160, 380], [160, 360], [160, 340], [160, 320], [160, 300], [160, 280], [160, 260],
-              [220, 380], [220, 360], [220, 340], [220, 320], [220, 300], [220, 280], [220, 260],
-              [380, 160], [360, 160], [340, 160], [320, 160], [300, 160], [280, 160], [260, 160],
-              [380, 220], [360, 220], [340, 220], [320, 220], [300, 220], [280, 220], [260, 220],
-              [220, 220], [160, 160], [220, 160], [160, 220]
-          ],
-          draw : function(x, y)   {
-              context.fillStyle = this.color;
-              context.fillRect(x, y, this.h, this.w);
-          }
-      }*/
 
       document.addEventListener('keydown', function(e) {
       
